@@ -102,7 +102,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
           <button class="btn primary full" onclick="openAiModal()">分析依頼を作る</button>
         </div>
         <div class="card">
-          <h3>分析JSONを読み込む</h3><p class="small" style="line-height:1.6">ChatGPTの分析結果を貼り付けてアプリに反映します。</p>
+          <h3>分析JSONを読み込む</h3><p class="small" style="line-height:1.6">ChatGPTの回答をそのまま貼り付けてアプリに反映します。情報源などが後ろに付いていても自動でJSON部分を抽出します。</p>
           <button class="btn secondary full" onclick="openImport()">JSONを貼り付け</button>
         </div>
         <div class="card">
@@ -135,9 +135,9 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 </div></div>
 
 <div class="modalBack" id="importModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('importModal')">×</button><h2>分析JSONを読み込む</h2>
-  <div class="field"><label>ChatGPTから返ってきたJSONをそのまま貼り付け</label><textarea id="jsonInput" placeholder='{"date":"2026-09-07", ...}'></textarea></div>
+  <div class="field"><label>ChatGPTから返ってきた回答をそのまま貼り付け</label><textarea id="jsonInput" placeholder='{"date":"2026-09-07", ...}'></textarea></div>
   <div class="actions"><button class="btn primary" onclick="importJson()">反映する</button><button class="btn secondary" onclick="loadSample()">サンプル表示</button></div>
-  <div class="note" style="margin-top:11px">コードブロック（```json ... ```）付きでも読み込めます。</div>
+  <div class="note" style="margin-top:11px">コードブロック・回答末尾の「情報源」・コピー時に付く余分な\（バックスラッシュ）があっても自動補正します。</div>
 </div></div>
 
 <div class="modalBack" id="aiModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('aiModal')">×</button><h2>今日の分析依頼</h2>
@@ -185,14 +185,57 @@ function switchView(btn){document.querySelectorAll('.nav button').forEach(b=>b.c
 function openSettings(){const s=state.settings;sCapital.value=s.capital;sMonthly.value=s.monthly;sAlloc.value=s.alloc;sRisk.value=s.risk;sMax.value=s.maxPositions;settingsModal.classList.add('show')}
 function saveSettings(){let old=state.settings.capital;let next=Number(sCapital.value)||0;state.settings={capital:next,monthly:Number(sMonthly.value)||0,alloc:Number(sAlloc.value),risk:Number(sRisk.value),maxPositions:Number(sMax.value)};if(!state.holdings.length&&!state.history.length){state.cash=next}else if(next!==old){state.cash += (next-old)};persist();closeModal('settingsModal');toast('設定を保存しました')}
 function openImport(){jsonInput.value='';importModal.classList.add('show')}
-function cleanJson(s){return s.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'')}
-function importJson(){try{const d=JSON.parse(cleanJson(jsonInput.value)); if(!Array.isArray(d.candidates))throw new Error(); state.candidates=d.candidates.map(normalizeCandidate);state.analysisDate=d.date||new Date().toISOString().slice(0,10);state.market=d.market||'中立';state.marketNote=d.marketNote||'';
+function cleanJson(s){
+  let t=String(s||'').trim().replace(/^\uFEFF/,'').replace(/```(?:json)?/gi,'').replace(/```/g,'').replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+  const start=t.indexOf('{');
+  if(start>=0){
+    let depth=0,inString=false,escaped=false,end=-1;
+    for(let i=start;i<t.length;i++){
+      const ch=t[i];
+      if(inString){
+        if(escaped){escaped=false;continue}
+        if(ch==='\\'){escaped=true;continue}
+        if(ch==='"')inString=false;
+      }else{
+        if(ch==='"')inString=true;
+        else if(ch==='{')depth++;
+        else if(ch==='}'){depth--;if(depth===0){end=i+1;break}}
+      }
+    }
+    if(end>start)t=t.slice(start,end);
+    else{const last=t.lastIndexOf('}');if(last>start)t=t.slice(start,last+1)}
+  }
+  return t.trim();
+}
+function parseFlexibleJson(s){
+  const raw=cleanJson(s);
+  const variants=[raw];
+  variants.push(raw
+    .replace(/\\\s*(\r?\n)/g,'$1')
+    .replace(/\\([\[\]\{\}])/g,'$1')
+    .replace(/\\,\s*/g,',')
+  );
+  variants.push(variants[1]
+    .replace(/\\"/g,'"')
+    .replace(/\\\\/g,'\\')
+  );
+  let lastErr=null;
+  for(const v of variants){
+    try{
+      let d=JSON.parse(v);
+      if(typeof d==='string')d=JSON.parse(d);
+      return d;
+    }catch(e){lastErr=e}
+  }
+  throw lastErr||new Error('JSON parse error');
+}
+function importJson(){try{const d=parseFlexibleJson(jsonInput.value); if(!Array.isArray(d.candidates))throw new Error(); state.candidates=d.candidates.map(normalizeCandidate);state.analysisDate=d.date||new Date().toISOString().slice(0,10);state.market=d.market||'中立';state.marketNote=d.marketNote||'';
   if(Array.isArray(d.holdings)){d.holdings.forEach(u=>{const h=state.holdings.find(x=>String(x.code)===String(u.code));if(h){if(u.current)h.current=Number(u.current);h.aiAction=u.action||'HOLD';h.aiComment=u.comment||'';}})}
   persist();closeModal('importModal');toast('今日の分析を反映しました');
 }catch(e){toast('JSONの形式を確認してください')}}
 function normalizeCandidate(c){return {code:String(c.code||''),name:String(c.name||''),current:Number(c.current||0),buyMin:Number(c.buyMin||0),buyMax:Number(c.buyMax||0),target:Number(c.target||0),stop:Number(c.stop||0),holdDays:String(c.holdDays||''),score:Math.max(1,Math.min(5,Number(c.score||3))),reasons:Array.isArray(c.reasons)?c.reasons:[],risks:Array.isArray(c.risks)?c.risks:[]}}
 function loadSample(){jsonInput.value=JSON.stringify({date:'2026-09-07',market:'サンプル',marketNote:'これは動作確認用で、実際の推奨銘柄ではありません。',candidates:[{code:'0000',name:'サンプル銘柄',current:1000,buyMin:980,buyMax:1005,target:1090,stop:950,holdDays:'5〜15営業日',score:4,reasons:['上昇トレンド（サンプル）','出来高増（サンプル）'],risks:['決算前は見送り']}],holdings:[]},null,2)}
-function makePrompt(){const invested=state.holdings.reduce((s,h)=>s+(h.current||h.buyPrice)*h.qty,0);const total=state.cash+invested;const holds=state.holdings.map(h=>({code:h.code,name:h.name,buyPrice:h.buyPrice,qty:h.qty,current:h.current||null,stop:h.stop,target:h.target}));return `あなたは日本株の売買判断を補助するアナリストです。必ず最新のWeb情報（株価、当日の地合い、直近ニュース、決算日、出来高・チャート）を確認してください。\n\n条件:\n- SBI証券で現物取引。S株利用可。信用取引・レバレッジ禁止。\n- 運用資産: 約${Math.round(total)}円\n- 現金: ${Math.round(state.cash)}円\n- 毎月追加: ${state.settings.monthly}円\n- リスク: 中\n- 最大保有: ${state.settings.maxPositions}銘柄\n- 1銘柄上限: 資産の${state.settings.alloc}%\n- 1取引の許容損失: 資産の${state.settings.risk}%\n- 想定保有: 数日〜3週間\n- 1日30分以内で管理したい。\n- 流動性が高い日本株を優先。決算直前などイベントリスクが高ければ見送る。\n- 良い候補がなければ candidates は空配列にして「今日は買わない」と判断する。\n- 「必ず買い」と断定せず、条件付きの候補として評価する。\n\n現在の保有:\n${JSON.stringify(holds)}\n\n最大3銘柄を選び、買値、利確、損切、想定保有日数、理由を出してください。保有銘柄があれば HOLD / HALF_SELL / SELL の判断もしてください。\n\n説明文は付けず、次のJSONだけを返してください。\n{\n  "date":"YYYY-MM-DD",\n  "market":"強気|中立|弱気|見送り",\n  "marketNote":"今日の地合いを短く",\n  "candidates":[\n    {"code":"銘柄コード","name":"会社名","current":現在値,"buyMin":買い下限,"buyMax":買い上限,"target":利確目安,"stop":損切目安,"holdDays":"例 5〜15営業日","score":1〜5,"reasons":["理由1","理由2"],"risks":["リスク1"]}\n  ],\n  "holdings":[\n    {"code":"銘柄コード","current":現在値,"action":"HOLD|HALF_SELL|SELL","comment":"理由"}\n  ]\n}`}
+function makePrompt(){const invested=state.holdings.reduce((s,h)=>s+(h.current||h.buyPrice)*h.qty,0);const total=state.cash+invested;const holds=state.holdings.map(h=>({code:h.code,name:h.name,buyPrice:h.buyPrice,qty:h.qty,current:h.current||null,stop:h.stop,target:h.target}));return `あなたは日本株の売買判断を補助するアナリストです。必ず最新のWeb情報（株価、当日の地合い、直近ニュース、決算日、出来高・チャート）を確認してください。\n\n条件:\n- SBI証券で現物取引。S株利用可。信用取引・レバレッジ禁止。\n- 運用資産: 約${Math.round(total)}円\n- 現金: ${Math.round(state.cash)}円\n- 毎月追加: ${state.settings.monthly}円\n- リスク: 中\n- 最大保有: ${state.settings.maxPositions}銘柄\n- 1銘柄上限: 資産の${state.settings.alloc}%\n- 1取引の許容損失: 資産の${state.settings.risk}%\n- 想定保有: 数日〜3週間\n- 1日30分以内で管理したい。\n- 流動性が高い日本株を優先。決算直前などイベントリスクが高ければ見送る。\n- 良い候補がなければ candidates は空配列にして「今日は買わない」と判断する。\n- 「必ず買い」と断定せず、条件付きの候補として評価する。\n\n現在の保有:\n${JSON.stringify(holds)}\n\n最大3銘柄を選び、買値、利確、損切、想定保有日数、理由を出してください。保有銘柄があれば HOLD / HALF_SELL / SELL の判断もしてください。\n\n次のJSONを必ず含めて返してください。JSONのキー名・配列構造は変更しないでください。情報源や補足がJSONの後ろに付いても構いません。\n{\n  "date":"YYYY-MM-DD",\n  "market":"強気|中立|弱気|見送り",\n  "marketNote":"今日の地合いを短く",\n  "candidates":[\n    {"code":"銘柄コード","name":"会社名","current":現在値,"buyMin":買い下限,"buyMax":買い上限,"target":利確目安,"stop":損切目安,"holdDays":"例 5〜15営業日","score":1〜5,"reasons":["理由1","理由2"],"risks":["リスク1"]}\n  ],\n  "holdings":[\n    {"code":"銘柄コード","current":現在値,"action":"HOLD|HALF_SELL|SELL","comment":"理由"}\n  ]\n}`}
 function openAiModal(){promptText.value=makePrompt();aiModal.classList.add('show')}
 async function copyPrompt(){try{await navigator.clipboard.writeText(promptText.value);toast('分析依頼をコピーしました')}catch(e){promptText.select();document.execCommand('copy');toast('コピーしました')}}
 function openBuy(code){const c=state.candidates.find(x=>x.code===code);if(!c)return;const total=portfolioTotal();const allocCap=total*state.settings.alloc/100;const riskCap=total*state.settings.risk/100;const perShareRisk=Math.max(1,(c.current||c.buyMax)-c.stop);const qtyRisk=Math.floor(riskCap/perShareRisk);const qtyAlloc=Math.floor(allocCap/(c.current||c.buyMax||1));const qty=Math.max(1,Math.min(qtyRisk||1,qtyAlloc||1));buyCode.value=c.code;buyName.value=`${c.name} [${c.code}]`;buyPrice.value=c.current||c.buyMax;buyQty.value=Math.min(qty,Math.max(1,Math.floor(state.cash/(c.current||c.buyMax||1))));buyGuide.textContent=`目安：1銘柄上限 ${yen(allocCap)} ／ 1回の損失上限 ${yen(riskCap)}。S株なら1株単位で調整できます。`;buyModal.classList.add('show')}
