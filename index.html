@@ -136,7 +136,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 
 <div class="modalBack" id="importModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('importModal')">×</button><h2>分析JSONを読み込む</h2>
   <div class="field"><label>ChatGPTから返ってきたJSONをそのまま貼り付け</label><textarea id="jsonInput" placeholder='{"date":"2026-09-07", ...}'></textarea></div>
-  <div class="actions"><button class="btn primary" onclick="importJson()">反映する</button><button class="btn secondary" onclick="loadSample()">サンプル表示</button></div>
+  <div class="actions" style="grid-template-columns:1fr 1fr 1fr"><button class="btn primary" onclick="importJson()">反映する</button><button class="btn secondary" onclick="loadSample()">サンプル</button><button class="btn secondary" onclick="clearJsonInput()">クリア</button></div>
   <div class="note" style="margin-top:11px">コードブロック（```json ... ```）付きでも読み込めます。</div>
 </div></div>
 
@@ -186,7 +186,8 @@ function openSettings(){const s=state.settings;sCash.value=Math.round(state.cash
 function saveSettings(){const nextCash=Math.max(0,Number(sCash.value)||0);state.cash=nextCash;state.settings={capital:nextCash,monthly:Number(sMonthly.value)||0,alloc:Number(sAlloc.value),risk:Number(sRisk.value),maxPositions:Number(sMax.value)};persist();closeModal('settingsModal');toast('設定を保存しました')}
 function editCash(){const v=prompt('現金残高（買付に使えるお金・円）を入力',Math.round(state.cash));if(v===null)return;const n=Math.max(0,Number(v));if(!isFinite(n)||v.trim()==='')return toast('数値を入力してください');state.cash=n;state.settings.capital=n;persist();toast('現金残高を更新しました')}
 function openImport(){jsonInput.value='';importModal.classList.add('show')}
-function cleanJson(s){return s.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'')}
+function clearJsonInput(){jsonInput.value='';jsonInput.focus();toast('入力をクリアしました')}
+function cleanJson(s){let t=String(s||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');t=t.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036\uFF02]/g,'"').replace(/[\u2018\u2019\u201A\u201B\u2032\u2035\uFF07]/g,"'");const i=t.indexOf('{'),j=t.lastIndexOf('}');if(i>=0&&j>i)t=t.slice(i,j+1);t=t.replace(/,\s*([}\]])/g,'$1');return t}
 function importJson(){try{const d=JSON.parse(cleanJson(jsonInput.value)); if(!Array.isArray(d.candidates))throw new Error(); state.candidates=d.candidates.map(normalizeCandidate);state.analysisDate=d.date||new Date().toISOString().slice(0,10);state.market=d.market||'中立';state.marketNote=d.marketNote||'';
   if(Array.isArray(d.holdings)){d.holdings.forEach(u=>{const h=state.holdings.find(x=>String(x.code)===String(u.code));if(h){if(u.current)h.current=Number(u.current);h.aiAction=u.action||'HOLD';h.aiComment=u.comment||'';}})}
   persist();closeModal('importModal');toast('今日の分析を反映しました');
