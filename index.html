@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#07111f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="株AI" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>株AIアシスタント</title>
+<style>
+:root{
+  --bg:#07111f; --panel:#0e1b2d; --panel2:#13233a; --text:#f4f7fb; --muted:#8fa3ba;
+  --line:#223753; --accent:#49dcb1; --accent2:#5fa8ff; --warn:#ffbf5b; --bad:#ff6b7f; --good:#49dcb1;
+  --shadow:0 14px 35px rgba(0,0,0,.24); --radius:20px;
+}
+*{box-sizing:border-box} html{background:var(--bg)} body{margin:0;background:linear-gradient(180deg,#07111f 0,#0a1524 55%,#08111d 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Yu Gothic",sans-serif;min-height:100vh}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.safe{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(88px,calc(76px + env(safe-area-inset-bottom)))}
+.app{max-width:760px;margin:0 auto;padding:0 14px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(7,17,31,.86);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.05);margin:0 -14px;padding:12px 14px 10px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand-title{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.02em}.logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(145deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#06111d;font-weight:1000;box-shadow:0 8px 24px rgba(73,220,177,.2)}
+.small{font-size:12px;color:var(--muted)}
+.iconbtn{border:1px solid var(--line);background:#102036;color:white;border-radius:12px;padding:8px 11px}
+.hero{margin-top:14px;background:linear-gradient(145deg,#11233b,#0d1d31);border:1px solid #203752;border-radius:24px;padding:18px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(73,220,177,.22),rgba(73,220,177,0));right:-55px;top:-65px}.label{font-size:12px;color:var(--muted);font-weight:700}.money{font-size:35px;font-weight:900;letter-spacing:-.03em;margin-top:4px}.row{display:flex;gap:10px;align-items:center}.space{justify-content:space-between}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.stat{padding:10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);border-radius:14px}.stat strong{display:block;margin-top:3px;font-size:15px}
+.section{margin-top:20px}.section-title{font-size:17px;font-weight:850;margin:0 2px 10px;display:flex;justify-content:space-between;align-items:center}.pill{font-size:11px;padding:5px 8px;border-radius:999px;border:1px solid #28405e;color:#a9bed4;background:#0c1a2c}.pill.good{border-color:rgba(73,220,177,.35);color:#71ebc8;background:rgba(73,220,177,.08)}.pill.warn{border-color:rgba(255,191,91,.4);color:#ffd18a;background:rgba(255,191,91,.08)}.pill.bad{border-color:rgba(255,107,127,.4);color:#ff9cab;background:rgba(255,107,127,.08)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:11px;box-shadow:0 7px 20px rgba(0,0,0,.12)}.card h3{margin:0;font-size:18px}.code{color:var(--muted);font-size:12px;margin-top:2px}.price{font-size:24px;font-weight:900}.score{color:#ffd76d;letter-spacing:2px;font-size:14px}.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:13px}.mini{background:#0b1727;border:1px solid #1c3049;border-radius:13px;padding:10px}.mini span{display:block;color:var(--muted);font-size:11px}.mini strong{display:block;margin-top:4px;font-size:14px}.green{color:var(--good)}.red{color:var(--bad)}.yellow{color:var(--warn)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}.tag{font-size:11px;color:#b9c9da;background:#12233a;border:1px solid #223a58;border-radius:999px;padding:5px 8px}
+.actions{display:grid;grid-template-columns:1.2fr .8fr;gap:8px;margin-top:13px}.btn{border:0;border-radius:13px;padding:12px 14px;font-weight:850}.primary{background:linear-gradient(135deg,var(--accent),#5fe0ff);color:#05131e}.secondary{background:#12243a;color:white;border:1px solid #29405c}.danger{background:rgba(255,107,127,.12);color:#ff98a6;border:1px solid rgba(255,107,127,.34)}.full{width:100%}
+.empty{color:var(--muted);text-align:center;padding:28px 10px;border:1px dashed #29405d;border-radius:18px;background:rgba(255,255,255,.015)}
+.nav{position:fixed;z-index:50;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);padding:8px 10px max(8px,env(safe-area-inset-bottom));background:rgba(7,17,31,.92);backdrop-filter:blur(20px);border-top:1px solid #1f334c;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.nav button{border:0;background:transparent;color:#7890aa;padding:8px 2px;border-radius:12px;font-size:10px;font-weight:750}.nav button span{display:block;font-size:20px;line-height:21px;margin-bottom:2px}.nav button.active{color:#dffcf4;background:rgba(73,220,177,.08)}
+.view{display:none}.view.active{display:block}
+.form{display:grid;gap:11px}.field label{display:block;color:#9bb0c5;font-size:12px;font-weight:750;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid #2b405b;background:#0b1728;color:white;border-radius:12px;padding:11px;outline:none}.field textarea{min-height:190px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.note{background:#0c1a2a;border:1px solid #223851;border-radius:15px;padding:12px;color:#a9bdd1;font-size:12px;line-height:1.6}.notice{background:rgba(255,191,91,.07);border:1px solid rgba(255,191,91,.25);color:#e7c792;border-radius:15px;padding:12px;font-size:12px;line-height:1.6}.goodbox{background:rgba(73,220,177,.07);border:1px solid rgba(73,220,177,.25);color:#a9e8d5;border-radius:15px;padding:12px;font-size:12px;line-height:1.6}
+.holdingTop{display:grid;grid-template-columns:1fr auto;gap:10px}.pnl{font-size:20px;font-weight:900}.progress{height:8px;border-radius:999px;background:#091422;border:1px solid #1c304a;overflow:hidden;margin-top:9px}.progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0}
+.modalBack{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:100;display:none;align-items:flex-end;justify-content:center}.modalBack.show{display:flex}.modal{width:min(760px,100%);max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;background:#0d1a2b;border:1px solid #27405e;padding:18px 16px max(24px,env(safe-area-inset-bottom));box-shadow:0 -20px 60px rgba(0,0,0,.45)}.modal h2{margin:0 0 14px;font-size:20px}.modal .close{float:right}
+.toast{position:fixed;z-index:200;left:50%;transform:translateX(-50%) translateY(20px);bottom:95px;max-width:90%;background:#e8fff7;color:#07151c;border-radius:999px;padding:10px 16px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:650px){.grid4{grid-template-columns:repeat(4,1fr)}.app{padding:0 20px}.topbar{margin:0 -20px;padding-left:20px;padding-right:20px}}
+</style>
+</head>
+<body>
+<div class="safe app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-title"><div class="logo">AI</div><div>株AIアシスタント<div class="small" id="todayLabel"></div></div></div>
+      <button class="iconbtn" onclick="openSettings()">⚙︎</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="v-home">
+      <div class="hero">
+        <div class="label">運用資産</div>
+        <div class="money" id="assetTotal">¥0</div>
+        <div class="stats">
+          <div class="stat"><span class="label">現金</span><strong id="cashVal">¥0</strong></div>
+          <div class="stat"><span class="label">保有</span><strong id="investedVal">¥0</strong></div>
+          <div class="stat"><span class="label">今月</span><strong id="monthPnl">¥0</strong></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">今日の方針 <span class="pill good" id="marketPill">分析待ち</span></div>
+        <div class="card" id="dailyPolicy">
+          <div class="row space"><div><div class="label">中リスク運用</div><h3 style="margin-top:4px">まず分析データを読み込む</h3></div><div style="font-size:28px">🧭</div></div>
+          <p class="small" style="line-height:1.65;margin-bottom:0">「今日の分析依頼」をChatGPTに渡し、返ってきたJSONを読み込むと、候補・買値・利確・損切を表示します。</p>
+          <div class="actions"><button class="btn primary" onclick="openAiModal()">今日の分析依頼</button><button class="btn secondary" onclick="openImport()">JSON読込</button></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">今日の買い候補 <span class="small" id="candidateDate"></span></div>
+        <div id="candidateList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-holdings">
+      <div class="section">
+        <div class="section-title">保有中 <span class="pill" id="holdCount">0銘柄</span></div>
+        <div id="holdingList"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-history">
+      <div class="section">
+        <div class="section-title">運用成績</div>
+        <div class="hero" style="margin-top:0">
+          <div class="label">確定損益 合計</div><div class="money" id="realizedTotal">¥0</div>
+          <div class="stats"><div class="stat"><span class="label">勝率</span><strong id="winRate">0%</strong></div><div class="stat"><span class="label">取引</span><strong id="tradeCount">0回</strong></div><div class="stat"><span class="label">最大損失</span><strong id="maxLoss">¥0</strong></div></div>
+        </div>
+        <div id="historyList" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-tools">
+      <div class="section">
+        <div class="section-title">ツール</div>
+        <div class="card">
+          <h3>今日のAI分析</h3><p class="small" style="line-height:1.6">現在の元本・保有銘柄・中リスク条件を自動でプロンプト化します。</p>
+          <button class="btn primary full" onclick="openAiModal()">分析依頼を作る</button>
+        </div>
+        <div class="card">
+          <h3>分析JSONを読み込む</h3><p class="small" style="line-height:1.6">ChatGPTの分析結果を貼り付けてアプリに反映します。</p>
+          <button class="btn secondary full" onclick="openImport()">JSONを貼り付け</button>
+        </div>
+        <div class="card">
+          <h3>SBI証券</h3><p class="small" style="line-height:1.6">注文は公式アプリ・公式サイトで実行します。ログイン情報はこのアプリに保存しません。</p>
+          <button class="btn secondary full" onclick="window.open('https://www.sbisec.co.jp/','_blank')">SBI証券を開く</button>
+        </div>
+        <div class="notice">このアプリは売買の判断整理を目的とした補助ツールです。利益を保証するものではありません。信用取引・レバレッジは初期設定では想定していません。</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="nav">
+  <button class="active" data-view="home" onclick="switchView(this)"><span>⌂</span>今日</button>
+  <button data-view="holdings" onclick="switchView(this)"><span>▣</span>保有</button>
+  <button data-view="history" onclick="switchView(this)"><span>↗</span>成績</button>
+  <button data-view="tools" onclick="switchView(this)"><span>✦</span>ツール</button>
+</nav>
+
+<div class="modalBack" id="settingsModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('settingsModal')">×</button><h2>運用設定</h2>
+  <div class="form">
+    <div class="field"><label>初期元本（円）</label><input type="number" id="sCapital" inputmode="numeric" /></div>
+    <div class="field"><label>毎月の追加資金（円）</label><input type="number" id="sMonthly" inputmode="numeric" /></div>
+    <div class="field"><label>1銘柄の上限（資産に対する割合）</label><select id="sAlloc"><option value="20">20%</option><option value="25">25%</option><option value="30">30%</option><option value="35">35%</option></select></div>
+    <div class="field"><label>1回の許容損失（資産に対する割合）</label><select id="sRisk"><option value="0.5">0.5%</option><option value="1">1.0%</option><option value="1.5">1.5%</option></select></div>
+    <div class="field"><label>最大保有銘柄数</label><select id="sMax"><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+    <div class="goodbox">推奨初期値：現物・S株中心／最大3銘柄／1回の損失上限1%／1銘柄30%まで。</div>
+    <button class="btn primary full" onclick="saveSettings()">設定を保存</button>
+  </div>
+</div></div>
+
+<div class="modalBack" id="importModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('importModal')">×</button><h2>分析JSONを読み込む</h2>
+  <div class="field"><label>ChatGPTから返ってきたJSONをそのまま貼り付け</label><textarea id="jsonInput" placeholder='{"date":"2026-09-07", ...}'></textarea></div>
+  <div class="actions"><button class="btn primary" onclick="importJson()">反映する</button><button class="btn secondary" onclick="loadSample()">サンプル表示</button></div>
+  <div class="note" style="margin-top:11px">コードブロック（```json ... ```）付きでも読み込めます。</div>
+</div></div>
+
+<div class="modalBack" id="aiModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('aiModal')">×</button><h2>今日の分析依頼</h2>
+  <div class="note">① 下のボタンでプロンプトをコピー → ② ChatGPTを開いて貼り付け → ③ 返ってきたJSONをこのアプリへ読み込み。</div>
+  <div class="field" style="margin-top:12px"><label>自動生成プロンプト</label><textarea id="promptText" readonly></textarea></div>
+  <div class="actions"><button class="btn primary" onclick="copyPrompt()">コピー</button><button class="btn secondary" onclick="window.open('https://chatgpt.com/','_blank')">ChatGPTを開く</button></div>
+</div></div>
+
+<div class="modalBack" id="buyModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('buyModal')">×</button><h2>買付を記録</h2>
+  <div class="form">
+    <input type="hidden" id="buyCode" />
+    <div class="field"><label>銘柄</label><input id="buyName" readonly /></div>
+    <div class="field"><label>実際の買値（円）</label><input type="number" id="buyPrice" inputmode="decimal" /></div>
+    <div class="field"><label>株数（S株も可）</label><input type="number" id="buyQty" inputmode="numeric" min="1" /></div>
+    <div class="note" id="buyGuide"></div>
+    <button class="btn primary full" onclick="confirmBuy()">買ったとして記録</button>
+  </div>
+</div></div>
+
+<div class="modalBack" id="sellModal"><div class="modal"><button class="iconbtn close" onclick="closeModal('sellModal')">×</button><h2>売却を記録</h2>
+  <div class="form"><input type="hidden" id="sellId" />
+    <div class="field"><label>売却価格（円）</label><input type="number" id="sellPrice" inputmode="decimal" /></div>
+    <div class="field"><label>売却株数</label><input type="number" id="sellQty" inputmode="numeric" min="1" /></div>
+    <button class="btn danger full" onclick="confirmSell()">売却を記録</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const yen = n => '¥' + Math.round(Number(n||0)).toLocaleString('ja-JP');
+const pct = n => (Number(n)>=0?'+':'') + Number(n).toFixed(1) + '%';
+const esc = s => String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const TODAY = new Date();
+document.getElementById('todayLabel').textContent = TODAY.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+let state = JSON.parse(localStorage.getItem('kabuAIState') || 'null') || {
+  settings:{capital:50000,monthly:10000,alloc:30,risk:1,maxPositions:3},
+  cash:50000, candidates:[], analysisDate:'', market:'分析待ち', marketNote:'', holdings:[], history:[]
+};
+function persist(){localStorage.setItem('kabuAIState',JSON.stringify(state));renderAll()}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function switchView(btn){document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('v-'+btn.dataset.view).classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+function openSettings(){const s=state.settings;sCapital.value=s.capital;sMonthly.value=s.monthly;sAlloc.value=s.alloc;sRisk.value=s.risk;sMax.value=s.maxPositions;settingsModal.classList.add('show')}
+function saveSettings(){let old=state.settings.capital;let next=Number(sCapital.value)||0;state.settings={capital:next,monthly:Number(sMonthly.value)||0,alloc:Number(sAlloc.value),risk:Number(sRisk.value),maxPositions:Number(sMax.value)};if(!state.holdings.length&&!state.history.length){state.cash=next}else if(next!==old){state.cash += (next-old)};persist();closeModal('settingsModal');toast('設定を保存しました')}
+function openImport(){jsonInput.value='';importModal.classList.add('show')}
+function cleanJson(s){return s.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'')}
+function importJson(){try{const d=JSON.parse(cleanJson(jsonInput.value)); if(!Array.isArray(d.candidates))throw new Error(); state.candidates=d.candidates.map(normalizeCandidate);state.analysisDate=d.date||new Date().toISOString().slice(0,10);state.market=d.market||'中立';state.marketNote=d.marketNote||'';
+  if(Array.isArray(d.holdings)){d.holdings.forEach(u=>{const h=state.holdings.find(x=>String(x.code)===String(u.code));if(h){if(u.current)h.current=Number(u.current);h.aiAction=u.action||'HOLD';h.aiComment=u.comment||'';}})}
+  persist();closeModal('importModal');toast('今日の分析を反映しました');
+}catch(e){toast('JSONの形式を確認してください')}}
+function normalizeCandidate(c){return {code:String(c.code||''),name:String(c.name||''),current:Number(c.current||0),buyMin:Number(c.buyMin||0),buyMax:Number(c.buyMax||0),target:Number(c.target||0),stop:Number(c.stop||0),holdDays:String(c.holdDays||''),score:Math.max(1,Math.min(5,Number(c.score||3))),reasons:Array.isArray(c.reasons)?c.reasons:[],risks:Array.isArray(c.risks)?c.risks:[]}}
+function loadSample(){jsonInput.value=JSON.stringify({date:'2026-09-07',market:'サンプル',marketNote:'これは動作確認用で、実際の推奨銘柄ではありません。',candidates:[{code:'0000',name:'サンプル銘柄',current:1000,buyMin:980,buyMax:1005,target:1090,stop:950,holdDays:'5〜15営業日',score:4,reasons:['上昇トレンド（サンプル）','出来高増（サンプル）'],risks:['決算前は見送り']}],holdings:[]},null,2)}
+function makePrompt(){const invested=state.holdings.reduce((s,h)=>s+(h.current||h.buyPrice)*h.qty,0);const total=state.cash+invested;const holds=state.holdings.map(h=>({code:h.code,name:h.name,buyPrice:h.buyPrice,qty:h.qty,current:h.current||null,stop:h.stop,target:h.target}));return `あなたは日本株の売買判断を補助するアナリストです。必ず最新のWeb情報（株価、当日の地合い、直近ニュース、決算日、出来高・チャート）を確認してください。\n\n条件:\n- SBI証券で現物取引。S株利用可。信用取引・レバレッジ禁止。\n- 運用資産: 約${Math.round(total)}円\n- 現金: ${Math.round(state.cash)}円\n- 毎月追加: ${state.settings.monthly}円\n- リスク: 中\n- 最大保有: ${state.settings.maxPositions}銘柄\n- 1銘柄上限: 資産の${state.settings.alloc}%\n- 1取引の許容損失: 資産の${state.settings.risk}%\n- 想定保有: 数日〜3週間\n- 1日30分以内で管理したい。\n- 流動性が高い日本株を優先。決算直前などイベントリスクが高ければ見送る。\n- 良い候補がなければ candidates は空配列にして「今日は買わない」と判断する。\n- 「必ず買い」と断定せず、条件付きの候補として評価する。\n\n現在の保有:\n${JSON.stringify(holds)}\n\n最大3銘柄を選び、買値、利確、損切、想定保有日数、理由を出してください。保有銘柄があれば HOLD / HALF_SELL / SELL の判断もしてください。\n\n説明文は付けず、次のJSONだけを返してください。\n{\n  "date":"YYYY-MM-DD",\n  "market":"強気|中立|弱気|見送り",\n  "marketNote":"今日の地合いを短く",\n  "candidates":[\n    {"code":"銘柄コード","name":"会社名","current":現在値,"buyMin":買い下限,"buyMax":買い上限,"target":利確目安,"stop":損切目安,"holdDays":"例 5〜15営業日","score":1〜5,"reasons":["理由1","理由2"],"risks":["リスク1"]}\n  ],\n  "holdings":[\n    {"code":"銘柄コード","current":現在値,"action":"HOLD|HALF_SELL|SELL","comment":"理由"}\n  ]\n}`}
+function openAiModal(){promptText.value=makePrompt();aiModal.classList.add('show')}
+async function copyPrompt(){try{await navigator.clipboard.writeText(promptText.value);toast('分析依頼をコピーしました')}catch(e){promptText.select();document.execCommand('copy');toast('コピーしました')}}
+function openBuy(code){const c=state.candidates.find(x=>x.code===code);if(!c)return;const total=portfolioTotal();const allocCap=total*state.settings.alloc/100;const riskCap=total*state.settings.risk/100;const perShareRisk=Math.max(1,(c.current||c.buyMax)-c.stop);const qtyRisk=Math.floor(riskCap/perShareRisk);const qtyAlloc=Math.floor(allocCap/(c.current||c.buyMax||1));const qty=Math.max(1,Math.min(qtyRisk||1,qtyAlloc||1));buyCode.value=c.code;buyName.value=`${c.name} [${c.code}]`;buyPrice.value=c.current||c.buyMax;buyQty.value=Math.min(qty,Math.max(1,Math.floor(state.cash/(c.current||c.buyMax||1))));buyGuide.textContent=`目安：1銘柄上限 ${yen(allocCap)} ／ 1回の損失上限 ${yen(riskCap)}。S株なら1株単位で調整できます。`;buyModal.classList.add('show')}
+function confirmBuy(){const c=state.candidates.find(x=>x.code===buyCode.value);const price=Number(buyPrice.value),qty=Math.floor(Number(buyQty.value));if(!c||price<=0||qty<=0)return toast('買値と株数を確認してください');const cost=price*qty;if(cost>state.cash)return toast('現金残高を超えています');state.cash-=cost;state.holdings.push({id:Date.now(),code:c.code,name:c.name,buyPrice:price,qty,current:price,target:c.target,stop:c.stop,buyDate:new Date().toISOString().slice(0,10),aiAction:'HOLD',aiComment:'',holdDays:c.holdDays});persist();closeModal('buyModal');toast('保有銘柄に追加しました')}
+function openSell(id,half=false){const h=state.holdings.find(x=>x.id===id);if(!h)return;sellId.value=id;sellPrice.value=h.current||h.buyPrice;sellQty.value=half?Math.max(1,Math.floor(h.qty/2)):h.qty;sellModal.classList.add('show')}
+function confirmSell(){const id=Number(sellId.value);const h=state.holdings.find(x=>x.id===id);const price=Number(sellPrice.value),qty=Math.floor(Number(sellQty.value));if(!h||price<=0||qty<=0||qty>h.qty)return toast('売却内容を確認してください');const pnl=(price-h.buyPrice)*qty;state.cash+=price*qty;state.history.unshift({id:Date.now(),code:h.code,name:h.name,buyPrice:h.buyPrice,sellPrice:price,qty,pnl,buyDate:h.buyDate,sellDate:new Date().toISOString().slice(0,10)});h.qty-=qty;if(h.qty<=0)state.holdings=state.holdings.filter(x=>x.id!==id);persist();closeModal('sellModal');toast('売却を記録しました')}
+function updateHoldingPrice(id){const h=state.holdings.find(x=>x.id===id);if(!h)return;const v=prompt(`${h.name} の現在値を入力`,h.current||h.buyPrice);if(v!==null&&Number(v)>0){h.current=Number(v);persist()}}
+function portfolioTotal(){return state.cash+state.holdings.reduce((s,h)=>s+(h.current||h.buyPrice)*h.qty,0)}
+function renderAll(){renderDashboard();renderCandidates();renderHoldings();renderHistory()}
+function renderDashboard(){const invested=state.holdings.reduce((s,h)=>s+(h.current||h.buyPrice)*h.qty,0);const total=state.cash+invested;assetTotal.textContent=yen(total);cashVal.textContent=yen(state.cash);investedVal.textContent=yen(invested);const now=new Date();const month=now.toISOString().slice(0,7);const m=state.history.filter(x=>String(x.sellDate).startsWith(month)).reduce((s,x)=>s+x.pnl,0);monthPnl.textContent=(m>=0?'+':'')+yen(m);monthPnl.className=m>=0?'green':'red';marketPill.textContent=state.market||'分析待ち';marketPill.className='pill '+((state.market==='弱気'||state.market==='見送り')?'warn':state.market==='強気'?'good':'');dailyPolicy.querySelector('h3').textContent=state.marketNote||'まず分析データを読み込む';candidateDate.textContent=state.analysisDate||''}
+function renderCandidates(){if(!state.candidates.length){candidateList.innerHTML='<div class="empty">候補はまだありません。<br>「今日の分析依頼」から始めてください。</div>';return}candidateList.innerHTML=state.candidates.map(c=>`<div class="card"><div class="row space"><div><h3>${esc(c.name)}</h3><div class="code">${esc(c.code)}</div></div><div style="text-align:right"><div class="price">${yen(c.current)}</div><div class="score">${'★'.repeat(c.score)}${'☆'.repeat(5-c.score)}</div></div></div><div class="grid4"><div class="mini"><span>買いゾーン</span><strong class="green">${yen(c.buyMin)}〜${yen(c.buyMax)}</strong></div><div class="mini"><span>利確目安</span><strong>${yen(c.target)}</strong></div><div class="mini"><span>損切目安</span><strong class="red">${yen(c.stop)}</strong></div><div class="mini"><span>保有目安</span><strong>${esc(c.holdDays)}</strong></div></div><div class="tags">${c.reasons.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}${c.risks.map(x=>`<span class="tag" style="color:#ffd18a">⚠ ${esc(x)}</span>`).join('')}</div><div class="actions"><button class="btn primary" onclick="openBuy('${esc(c.code)}')">買った</button><button class="btn secondary" onclick="toast('見送りとして記録はしません')">見送り</button></div></div>`).join('')}
+function renderHoldings(){holdCount.textContent=state.holdings.length+'銘柄';if(!state.holdings.length){holdingList.innerHTML='<div class="empty">保有銘柄はありません。</div>';return}holdingList.innerHTML=state.holdings.map(h=>{const cur=h.current||h.buyPrice;const p=(cur-h.buyPrice)/h.buyPrice*100;const pnl=(cur-h.buyPrice)*h.qty;const action=h.aiAction||'HOLD';const cls=action==='SELL'?'bad':action==='HALF_SELL'?'warn':'good';const jp=action==='SELL'?'売却候補':action==='HALF_SELL'?'半分利確':'保有継続';const toTarget=h.target&&h.buyPrice?(cur-h.buyPrice)/(h.target-h.buyPrice)*100:0;return `<div class="card"><div class="holdingTop"><div><h3>${esc(h.name)}</h3><div class="code">${esc(h.code)} ・ ${h.qty}株</div></div><div style="text-align:right"><div class="pnl ${p>=0?'green':'red'}">${p>=0?'+':''}${yen(pnl)}</div><div class="small">${pct(p)}</div></div></div><div class="grid4"><div class="mini"><span>買値</span><strong>${yen(h.buyPrice)}</strong></div><div class="mini" onclick="updateHoldingPrice(${h.id})"><span>現在値 ✎</span><strong>${yen(cur)}</strong></div><div class="mini"><span>利確</span><strong>${yen(h.target)}</strong></div><div class="mini"><span>損切</span><strong class="red">${yen(h.stop)}</strong></div></div><div class="progress"><i style="width:${Math.max(0,Math.min(100,toTarget))}%"></i></div><div class="row space" style="margin-top:11px"><span class="pill ${cls}">${jp}</span><span class="small">${esc(h.aiComment||h.holdDays||'')}</span></div><div class="actions"><button class="btn ${action==='SELL'?'danger':'secondary'}" onclick="openSell(${h.id},false)">全部売却</button><button class="btn secondary" onclick="openSell(${h.id},true)">半分売却</button></div></div>`}).join('')}
+function renderHistory(){const total=state.history.reduce((s,x)=>s+x.pnl,0);const wins=state.history.filter(x=>x.pnl>0).length;const losses=state.history.filter(x=>x.pnl<0).map(x=>x.pnl);realizedTotal.textContent=(total>=0?'+':'')+yen(total);realizedTotal.className='money '+(total>=0?'green':'red');winRate.textContent=state.history.length?Math.round(wins/state.history.length*100)+'%':'0%';tradeCount.textContent=state.history.length+'回';maxLoss.textContent=yen(losses.length?Math.min(...losses):0);if(!state.history.length){historyList.innerHTML='<div class="empty">売却履歴はまだありません。</div>';return}historyList.innerHTML=state.history.map(x=>`<div class="card"><div class="row space"><div><strong>${esc(x.name)} <span class="small">${esc(x.code)}</span></strong><div class="small">${x.buyDate} → ${x.sellDate}・${x.qty}株</div></div><div class="pnl ${x.pnl>=0?'green':'red'}">${x.pnl>=0?'+':''}${yen(x.pnl)}</div></div><div class="small" style="margin-top:8px">${yen(x.buyPrice)} → ${yen(x.sellPrice)}</div></div>`).join('')}
+renderAll();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
